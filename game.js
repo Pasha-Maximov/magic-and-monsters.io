@@ -14,7 +14,7 @@ let player = {
 let monsters = [];
 let projectiles = [];
 let arrow = {
-    length: 40, // Length of the arrow from the edge of the circle
+    length: 41, // Length of the arrow from the edge of the circle
     angle: 0 // Angle of the arrow relative to the player
 };
 
