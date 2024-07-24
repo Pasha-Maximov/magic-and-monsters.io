@@ -1,0 +1,101 @@
+body {
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #20232a;
+    color: #61dafb;
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    text-align: center;
+}
+
+canvas {
+    border: 1px solid #61dafb;
+    margin-top: 10px; /* Adds some space between the title and the canvas */
+}
+
+#retryButton {
+    display: none; /* Hide the button initially */
+    position: absolute;
+    top: 70%; /* Adjusted to lower the button */
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 10px 20px;
+    font-size: 20px;
+    background-color: #61dafb;
+    color: #20232a;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.hotbar {
+    position: absolute;
+    bottom: 5%; /* Lowered the hotbar */
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.5);
+    border: 1px solid #61dafb;
+    border-radius: 10px;
+    padding: 10px;
+    width: 240px; /* Adjusted width to fit four slots */
+    height: 50px;
+}
+
+.hotbar .slot {
+    position: relative;
+    width: 50px;
+    height: 50px;
+    border: 1px solid #61dafb;
+    margin: 0 5px; /* Add space between slots */
+    background-color: rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.hotbar .slot .number {
+    color: white;
+    font-size: 12px;
+}
+
+.slot.selected {
+    border: 2px solid yellow;
+}
+
+.number {
+    position: absolute;
+    top: 2px;
+    font-size: 12px;
+}
+
+.item {
+    width: 30px;
+    height: 30px;
+}
+
+.item.green-star {
+    background: green;
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+.cooldown {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 18px;
+    color: white;
+}

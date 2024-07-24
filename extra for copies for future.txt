@@ -1,0 +1,105 @@
+    ctx.arc(player.x + (player.size) / 2, player.y + (player.size) / 2, player.size, 0, Math.PI * 2);
+
+
+
+
+    document.getElementById('hotbar').style.display = 'flex';
+
+
+
+
+    ctx.fillStyle = 'white';
+
+
+
+
+
+    const arrowBaseX = (player.x + (player.size) / 2) + Math.cos(arrow.angle) * player.size;
+    const arrowBaseY = (player.y + (player.size) / 2) + Math.sin(arrow.angle) * player.size;
+
+
+
+
+
+
+    width: 240px; /* Adjusted width to fit four slots */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    random stuff:
+
+
+
+
+        const arrowBaseX = (player.x + (player.size) / 2) + Math.cos(arrow.angle) * player.size;
+    const arrowBaseY = (player.x + (player.size) / 2) + Math.sin(arrow.angle) * player.size;
