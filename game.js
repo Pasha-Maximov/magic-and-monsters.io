@@ -49,6 +49,9 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowRight') keys.arrowRight = true;
     if (e.key === ' ') keys.space = true;
     if (e.key === '1') selectSlot(0);
+    if (e.key === '2') selectSlot(1);
+    if (e.key === '3') selectSlot(2);
+    if (e.key === '4') selectSlot(3);
 });
 
 document.addEventListener('keyup', (e) => {
@@ -119,7 +122,7 @@ function resetGame() {
     monsters = [];
     projectiles = [];
     document.getElementById('retryButton').style.display = 'none';
-    document.getElementById('hotbar').style.display = 'flex';
+    document.getElementById('hotbar').style.display = 'block';
     clearInterval(spawnInterval);
     clearInterval(cooldown.interval);
     spawnSpeed = 15000; // Reset spawn speed
@@ -143,6 +146,9 @@ function update() {
     if (keys.space && selectedSlot === 0 && !cooldown.active) {
         shootProjectile();
         keys.space = false; // Prevent continuous shooting on holding space
+    } else if (keys.space && selectedSlot === 1 && !cooldown.active) {
+        activateBomb();
+        keys.space = false;
     }
 
     monsters.forEach(monster => {
@@ -185,14 +191,14 @@ function draw() {
 
     // Draw player
     ctx.beginPath();
-    ctx.arc(player.x + (player.size) / 2, player.y + (player.size) / 2, player.size, 0, Math.PI * 2);
+    ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
     ctx.fillStyle = player.color;
     ctx.fill();
     ctx.closePath();
 
     // Draw arrow
-    const arrowBaseX = (player.x + (player.size) / 2) + Math.cos(arrow.angle) * player.size;
-    const arrowBaseY = (player.y + (player.size) / 2) + Math.sin(arrow.angle) * player.size;
+    const arrowBaseX = player.x + Math.cos(arrow.angle) * player.size;
+    const arrowBaseY = player.y + Math.sin(arrow.angle) * player.size;
     const arrowTipX = arrowBaseX + Math.cos(arrow.angle) * arrow.length;
     const arrowTipY = arrowBaseY + Math.sin(arrow.angle) * arrow.length;
     const arrowLeftX = arrowBaseX + Math.cos(arrow.angle + Math.PI / 2) * 5;
@@ -204,7 +210,7 @@ function draw() {
     ctx.moveTo(arrowLeftX, arrowLeftY);
     ctx.lineTo(arrowTipX, arrowTipY);
     ctx.lineTo(arrowRightX, arrowRightY);
-    ctx.fillStyle = 'white';
+    ctx.fillStyle = 'black';
     ctx.fill();
     ctx.closePath();
 
@@ -228,8 +234,11 @@ function draw() {
 
     // Draw monsters
     monsters.forEach(monster => {
+        ctx.beginPath();
+        ctx.arc(monster.x, monster.y, monster.size, 0, Math.PI * 2);
         ctx.fillStyle = monster.color;
-        ctx.fillRect(monster.x, monster.y, monster.size, monster.size);
+        ctx.fill();
+        ctx.closePath();
     });
 
     if (!player.isAlive) {
@@ -320,6 +329,31 @@ function startSpawning() {
     }, Math.random() * 5000 + spawnSpeed); // Random time based on decreasing spawn speed
 }
 
+function activateBomb() {
+    // Create the bomb effect
+    const bombRadius = 30;
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, bombRadius, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+    ctx.fill();
+    ctx.closePath();
+
+    // Check for monsters within the bomb radius
+    monsters = monsters.filter(monster => {
+        const dx = monster.x - player.x;
+        const dy = monster.y - player.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        return distance > bombRadius;
+    });
+
+    // Set a timeout to remove the bomb effect after 2 seconds
+    setTimeout(() => {
+        // Redraw without the bomb effect
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        draw();
+    }, 2000);
+}
+
 function gameLoop() {
     update();
     draw();
@@ -330,12 +364,13 @@ function gameLoop() {
 const hotbar = document.createElement('div');
 hotbar.id = 'hotbar';
 hotbar.classList.add('hotbar');
-for (let i = 0; i < 2; i++) {
+for (let i = 0; i < 4; i++) { // Adjusted to 4 slots
     const slot = document.createElement('div');
     slot.classList.add('slot');
     if (i === 0) {
         const item = document.createElement('div');
         item.classList.add('item', 'green-star');
+        item.style.marginTop = '10px'; // Lower the green star
         slot.appendChild(item);
 
         // Add cooldown overlay
@@ -343,6 +378,11 @@ for (let i = 0; i < 2; i++) {
         cooldownOverlay.classList.add('cooldown');
         cooldownOverlay.style.display = 'none';
         slot.appendChild(cooldownOverlay);
+    } else if (i === 1) {
+        const item = document.createElement('div');
+        item.classList.add('item', 'blue-star');
+        item.style.marginTop = '10px'; // Lower the blue star
+        slot.appendChild(item);
     }
     const number = document.createElement('div');
     number.classList.add('number');
