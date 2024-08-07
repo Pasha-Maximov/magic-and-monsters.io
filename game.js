@@ -40,6 +40,12 @@ let cooldown = {
     interval: null
 };
 
+let bombEffect = {
+    active: false,
+    radius: 125,
+    timeout: null
+};
+
 document.addEventListener('keydown', (e) => {
     if (e.key === 'w') keys.w = true;
     if (e.key === 'a') keys.a = true;
@@ -129,6 +135,7 @@ function resetGame() {
     cooldown.active = false;
     cooldown.timeLeft = 0;
     document.querySelector('.slot:nth-child(1) .cooldown').style.display = 'none';
+    bombEffect.active = false;
     startSpawning();
 }
 
@@ -223,14 +230,23 @@ function draw() {
 
         ctx.beginPath();
         ctx.moveTo(projectile.x, projectile.y - projectile.size);
-        ctx.lineTo(projectile.x + projectile.size / 2, projectile.y + projectile.size);
-        ctx.lineTo(projectile.x - projectile.size / 2, projectile.y + projectile.size);
-        ctx.closePath();
+        ctx.lineTo(projectile.x + projectile.size / 2, projectile.y + projectile.size / 2);
+        ctx.lineTo(projectile.x - projectile.size / 2, projectile.y + projectile.size / 2);
         ctx.fillStyle = projectile.color;
         ctx.fill();
+        ctx.closePath();
 
         ctx.restore();
     });
+
+    // Draw bomb effect if active
+    if (bombEffect.active) {
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, bombEffect.radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+        ctx.fill();
+        ctx.closePath();
+    }
 
     // Draw monsters
     monsters.forEach(monster => {
@@ -330,27 +346,19 @@ function startSpawning() {
 }
 
 function activateBomb() {
-    // Create the bomb effect
-    const bombRadius = 30;
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, bombRadius, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
-    ctx.fill();
-    ctx.closePath();
+    bombEffect.active = true;
 
     // Check for monsters within the bomb radius
     monsters = monsters.filter(monster => {
         const dx = monster.x - player.x;
         const dy = monster.y - player.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        return distance > bombRadius;
+        return distance > bombEffect.radius;
     });
 
     // Set a timeout to remove the bomb effect after 2 seconds
-    setTimeout(() => {
-        // Redraw without the bomb effect
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        draw();
+    bombEffect.timeout = setTimeout(() => {
+        bombEffect.active = false;
     }, 2000);
 }
 
