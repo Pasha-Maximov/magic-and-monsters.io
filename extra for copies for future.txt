@@ -36,6 +36,7 @@ for (let i = 0; i < 4; i++) {
 
 
 
+for (let i = 0; i < 6; i++) { // Adjusted to 6 slots
 
 
 
@@ -53,6 +54,9 @@ for (let i = 0; i < 4; i++) {
 
 
 
+.ball_lightning {
+    width: 50%;height: 50%
+}
 
 
 
@@ -66,10 +70,7 @@ for (let i = 0; i < 4; i++) {
 
 
 
-
-
-
-
+<img class="ball_lightning" src="ball_lightning.png" alt=" ">
 
 
 

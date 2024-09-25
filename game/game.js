@@ -11,10 +11,20 @@ let player = {
     direction: 0 // Direction the player is facing, in radians
 };
 
+const projectileImage = new Image();
+projectileImage.src = 'ball_lightning.png';
+
+const monsterImage = new Image();
+monsterImage.src = 'monster.png';
+
+const playerImage = new Image();
+playerImage.src = 'player.png';
+
+
 let monsters = [];
 let projectiles = [];
 let arrow = {
-    length: 41, // Length of the arrow from the edge of the circle
+    length: 40, // Length of the arrow from the edge of the circle
     angle: 0 // Angle of the arrow relative to the player
 };
 
@@ -34,16 +44,23 @@ let spawnSpeed = 15000; // Initial spawn speed in milliseconds
 let speedIncrement = 0.1; // Speed increase factor for monsters
 let spawnDecrement = 500; // Decrease in spawn interval in milliseconds
 
-let cooldown = {
-    active: false,
-    timeLeft: 0,
-    interval: null
-};
+let cooldowns = [
+    { active: false, timeLeft: 0, interval: null }, // Green star cooldown
+    { active: false, timeLeft: 0, interval: null }, // Blue star cooldown
+    { active: false, timeLeft: 0, interval: null }  // Yellow star cooldown
+];
 
 let bombEffect = {
     active: false,
     radius: 125,
     timeout: null
+};
+
+let trapEffect = {
+    active: false,
+    radius: 75,
+    x: 0,
+    y: 0
 };
 
 document.addEventListener('keydown', (e) => {
@@ -58,6 +75,8 @@ document.addEventListener('keydown', (e) => {
     if (e.key === '2') selectSlot(1);
     if (e.key === '3') selectSlot(2);
     if (e.key === '4') selectSlot(3);
+    if (e.key === '5') selectSlot(4);
+    if (e.key === '6') selectSlot(5);
 });
 
 document.addEventListener('keyup', (e) => {
@@ -83,6 +102,11 @@ document.addEventListener('click', (e) => {
             selectSlot(index);
         }
     });
+
+    // Place trap if third slot is selected and not on cooldown
+    if (selectedSlot === 2 && !cooldowns[2].active) {
+        activateTrap(x, y);
+    }
 });
 
 function selectSlot(index) {
@@ -128,14 +152,17 @@ function resetGame() {
     monsters = [];
     projectiles = [];
     document.getElementById('retryButton').style.display = 'none';
-    document.getElementById('hotbar').style.display = 'block';
+    document.getElementById('hotbar').style.display = 'flex';
     clearInterval(spawnInterval);
-    clearInterval(cooldown.interval);
+    cooldowns.forEach(cooldown => {
+        clearInterval(cooldown.interval);
+        cooldown.active = false;
+        cooldown.timeLeft = 0;
+    });
     spawnSpeed = 15000; // Reset spawn speed
-    cooldown.active = false;
-    cooldown.timeLeft = 0;
-    document.querySelector('.slot:nth-child(1) .cooldown').style.display = 'none';
     bombEffect.active = false;
+    trapEffect.active = false;
+    selectSlot(0); // Select the first slot by default
     startSpawning();
 }
 
@@ -150,18 +177,24 @@ function update() {
     if (keys.arrowLeft) arrow.angle -= 0.1; // Increased rotation speed
     if (keys.arrowRight) arrow.angle += 0.1; // Increased rotation speed
 
-    if (keys.space && selectedSlot === 0 && !cooldown.active) {
+    if (keys.space && selectedSlot === 0 && !cooldowns[0].active) {
         shootProjectile();
         keys.space = false; // Prevent continuous shooting on holding space
-    } else if (keys.space && selectedSlot === 1 && !cooldown.active) {
+    } else if (keys.space && selectedSlot === 1 && !cooldowns[1].active) {
         activateBomb();
         keys.space = false;
     }
+
+    
 
     monsters.forEach(monster => {
         let dx = player.x - monster.x;
         let dy = player.y - monster.y;
         let distance = Math.sqrt(dx * dx + dy * dy);
+
+        // Rotate the monster
+        monster.rotation += 0; // Adjust the speed of rotation as desired
+    
 
         if (distance > 0) {
             monster.x += (dx / distance) * monster.speed;
@@ -191,21 +224,27 @@ function update() {
             projectiles.splice(index, 1); // Remove projectile if it goes out of bounds
         }
     });
+
+    // Check for monsters in the trap effect
+    if (trapEffect.active) {
+        monsters = monsters.filter(monster => {
+            const dx = monster.x - trapEffect.x;
+            const dy = monster.y - trapEffect.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            return distance > trapEffect.radius;
+        });
+    }
 }
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Draw player
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
-    ctx.fillStyle = player.color;
-    ctx.fill();
-    ctx.closePath();
+    ctx.drawImage(playerImage, player.x - player.size * 5.5, player.y - player.size * 4.75, player.size * 12, player.size * 12);
 
     // Draw arrow
-    const arrowBaseX = player.x + Math.cos(arrow.angle) * player.size;
-    const arrowBaseY = player.y + Math.sin(arrow.angle) * player.size;
+    const arrowBaseX = (player.x + (player.size) / 2) + Math.cos(arrow.angle) * (player.size * 2.5);
+    const arrowBaseY = (player.y + (player.size) / 2) + Math.sin(arrow.angle) * (player.size * 2.5);
     const arrowTipX = arrowBaseX + Math.cos(arrow.angle) * arrow.length;
     const arrowTipY = arrowBaseY + Math.sin(arrow.angle) * arrow.length;
     const arrowLeftX = arrowBaseX + Math.cos(arrow.angle + Math.PI / 2) * 5;
@@ -215,26 +254,24 @@ function draw() {
 
     ctx.beginPath();
     ctx.moveTo(arrowLeftX, arrowLeftY);
-    ctx.lineTo(arrowTipX, arrowTipY);
     ctx.lineTo(arrowRightX, arrowRightY);
-    ctx.fillStyle = 'black';
-    ctx.fill();
+    ctx.lineTo(arrowTipX, arrowTipY);
     ctx.closePath();
+    ctx.fillStyle = 'white';
+    ctx.fill();
 
     // Draw projectiles
     projectiles.forEach(projectile => {
         ctx.save();
-        ctx.translate(projectile.x, projectile.y);
-        ctx.rotate(projectile.angle);
-        ctx.translate(-projectile.x, -projectile.y);
 
-        ctx.beginPath();
-        ctx.moveTo(projectile.x, projectile.y - projectile.size);
-        ctx.lineTo(projectile.x + projectile.size / 2, projectile.y + projectile.size / 2);
-        ctx.lineTo(projectile.x - projectile.size / 2, projectile.y + projectile.size / 2);
-        ctx.fillStyle = projectile.color;
-        ctx.fill();
-        ctx.closePath();
+        // Translate to the projectile's position
+        ctx.translate(projectile.x, projectile.y);
+
+        // Rotate the canvas to the projectile's angle
+        ctx.rotate(projectile.angle);
+
+        // Draw the projectile
+        ctx.drawImage(projectileImage, -projectile.size * 5.5, -projectile.size * 5.5 , projectile.size * 12, projectile.size * 12,);
 
         ctx.restore();
     });
@@ -248,13 +285,33 @@ function draw() {
         ctx.closePath();
     }
 
-    // Draw monsters
-    monsters.forEach(monster => {
+    // Draw trap effect if active
+    if (trapEffect.active) {
         ctx.beginPath();
-        ctx.arc(monster.x, monster.y, monster.size, 0, Math.PI * 2);
-        ctx.fillStyle = monster.color;
+        ctx.arc(trapEffect.x, trapEffect.y, trapEffect.radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 165, 0, 0.5)';
         ctx.fill();
         ctx.closePath();
+    }
+
+    // Draw monsters
+    monsters.forEach(monster => {
+        
+    
+        // Save the current canvas state
+        ctx.save();
+
+        // Move the canvas origin to the monster's position
+        ctx.translate(monster.x, monster.y);
+
+        // Rotate the canvas by the monster's rotation angle
+        ctx.rotate(monster.rotation);
+
+        // Draw the monster image centered at the origin (which is now the monster's position)
+        ctx.drawImage(monsterImage, monster.size * -5.5, monster.size * -5.5, monster.size * 12, monster.size * 12);
+
+        // Restore the canvas state to prevent the rotation from affecting other elements
+        ctx.restore();
     });
 
     if (!player.isAlive) {
@@ -294,13 +351,14 @@ function shootProjectile() {
     };
     projectiles.push(projectile);
 
-    activateCooldown(); // Activate cooldown when a projectile is shot
+    activateCooldown(0); // Activate cooldown for green star
 }
 
-function activateCooldown() {
+function activateCooldown(slotIndex) {
+    const cooldown = cooldowns[slotIndex];
     cooldown.active = true;
-    cooldown.timeLeft = 10; // 10-second cooldown
-    const cooldownOverlay = document.querySelector('.slot:nth-child(1) .cooldown');
+    cooldown.timeLeft = slotIndex === 0 ? 10 : slotIndex === 1 ? 30 : 50; // 10-second cooldown for green star, 30 seconds for blue star, 50 seconds for yellow star
+    const cooldownOverlay = document.querySelector(`.slot:nth-child(${slotIndex + 1}) .cooldown`);
     cooldownOverlay.style.display = 'flex';
     cooldownOverlay.textContent = cooldown.timeLeft;
 
@@ -326,7 +384,7 @@ function spawnMonster() {
     } while (Math.abs(x - player.x) < 200 && Math.abs(y - player.y) < 200);
 
     const speed = 2 + (monsters.length * speedIncrement); // Increase speed over time
-    const monster = { x: x, y: y, size: 20, color: 'red', speed: speed };
+    const monster = { x: x, y: y, size: 20, color: 'red', speed: speed, rotate: 0 };
     monsters.push(monster);
 }
 
@@ -356,10 +414,25 @@ function activateBomb() {
         return distance > bombEffect.radius;
     });
 
+    activateCooldown(1); // Activate cooldown for blue star
+
     // Set a timeout to remove the bomb effect after 2 seconds
     bombEffect.timeout = setTimeout(() => {
         bombEffect.active = false;
     }, 2000);
+}
+
+function activateTrap(x, y) {
+    trapEffect.active = true;
+    trapEffect.x = x;
+    trapEffect.y = y;
+
+    activateCooldown(2); // Activate cooldown for yellow star
+
+    // Set a timeout to remove the trap effect after 5 seconds
+    trapEffect.timeout = setTimeout(() => {
+        trapEffect.active = false;
+    }, 8000);
 }
 
 function gameLoop() {
@@ -372,7 +445,7 @@ function gameLoop() {
 const hotbar = document.createElement('div');
 hotbar.id = 'hotbar';
 hotbar.classList.add('hotbar');
-for (let i = 0; i < 4; i++) { // Adjusted to 4 slots
+for (let i = 0; i < 6; i++) { // Adjusted to 6 slots
     const slot = document.createElement('div');
     slot.classList.add('slot');
     if (i === 0) {
@@ -391,6 +464,23 @@ for (let i = 0; i < 4; i++) { // Adjusted to 4 slots
         item.classList.add('item', 'blue-star');
         item.style.marginTop = '10px'; // Lower the blue star
         slot.appendChild(item);
+
+        // Add cooldown overlay
+        const cooldownOverlay = document.createElement('div');
+        cooldownOverlay.classList.add('cooldown');
+        cooldownOverlay.style.display = 'none';
+        slot.appendChild(cooldownOverlay);
+    } else if (i === 2) {
+        const item = document.createElement('div');
+        item.classList.add('item', 'yellow-star');
+        item.style.marginTop = '10px'; // Lower the yellow star
+        slot.appendChild(item);
+
+        // Add cooldown overlay
+        const cooldownOverlay = document.createElement('div');
+        cooldownOverlay.classList.add('cooldown');
+        cooldownOverlay.style.display = 'none';
+        slot.appendChild(cooldownOverlay);
     }
     const number = document.createElement('div');
     number.classList.add('number');
